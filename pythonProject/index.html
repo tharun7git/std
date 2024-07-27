@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Writer</title>
+    <style>
+        /* Existing CSS styles */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+
+        /* Existing CSS for other elements */
+        #blogForm {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #blogForm input, #blogForm textarea {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #blogForm button[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #blogForm button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        #blogPosts {
+            margin-top: 20px;
+        }
+
+        .post {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .post .title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .post .content {
+            overflow: auto;
+            max-height: 200px;
+        }
+
+        .post .actions {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+        }
+
+        .post .actions a {
+            text-decoration: none;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        .post .actions a:hover {
+            color: #333;
+        }
+
+        #categories, #tags {
+            margin-top: 20px;
+        }
+
+        #category-list, #tag-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #category-list li, #tag-list li {
+            margin-bottom: 10px;
+        }
+
+        #category-list a, #tag-list a {
+            text-decoration: none;
+            color: #337ab7;
+        }
+
+        #category-list a:hover, #tag-list a:hover {
+            color: #23527c;
+        }
+
+        .comments {
+            margin-top: 10px;
+        }
+
+        .comments .comment-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .comments .comment-form button {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .comments .comment-form button:hover {
+            background-color: #218838;
+        }
+
+        .comments .comment-list .comment {
+            background-color: #f1f1f1;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+
+        .rating {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .rating span {
+            cursor: pointer;
+            font-size: 20px;
+            color: #ddd;
+            transition: color 0.2s;
+        }
+
+        .rating span:hover,
+        .rating span.active {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="logout-button" onclick="logout()">Logout</button>
+        <h1>Blog Writer</h1>
+        <div id="total-posts">Total Posts: <span id="total-posts-count">0</span></div>
+        <form id="blogForm">
+            <input type="text" id="title" placeholder="Title" required>
+            <textarea id="content" placeholder="Write your blog post here..." required></textarea>
+            <button type="submit">Publish</button>
+        </form>
+        <div id="blogPosts"></div>
+        <div id="categories">
+            <h2>Categories</h2>
+            <ul id="category-list"></ul>
+        </div>
+        <div id="tags">
+            <h2>Tags</h2>
+            <ul id="tag-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const blogPosts = [];
+        const categories = [];
+        const tags = [];
+
+        function displayPosts() {
+            const blogPostsContainer = document.getElementById('blogPosts');
+            blogPostsContainer.innerHTML = '';
+
+            blogPosts.forEach((post, index) => {
+                const postElement = document.createElement('div');
+                postElement.classList.add('post');
+
+                const postTitle = document.createElement('div');
+                postTitle.classList.add('title');
+                postTitle.textContent = `#${post.id} - ${post.title}`;
+
+                const postContent = document.createElement('div');
+                postContent.classList.add('content');
+
+                // Truncate content if it's too long
+                const truncatedContent = truncateText(post.content, 200);
+                postContent.textContent = truncatedContent;
+
+                const readMoreLink = document.createElement('a');
+                readMoreLink.href = '#';
+                readMoreLink.textContent = 'Read More';
+                readMoreLink.addEventListener('click', function() {
+                    postContent.textContent = post.content;
+                    readMoreLink.style.display = 'none';
+                });
+
+                postContent.appendChild(readMoreLink);
+
+                const actions = document.createElement('div');
+                actions.classList.add('actions');
+
+                const editLink = document.createElement('a');
+                editLink.href = '#';
+                editLink.textContent = 'Edit';
+                editLink.classList.add('btn', 'btn-edit');
+                editLink.addEventListener('click', function() {
+                    editPost(index);
+                });
+
+                const deleteLink = document.createElement('a');
+                deleteLink.href = '#';
+                deleteLink.textContent = 'Delete';
+                deleteLink.classList.add('btn', 'btn-delete');
+                deleteLink.addEventListener('click', function() {
+                    deletePost(index);
+                });
+
+                actions.appendChild(editLink);
+                actions.appendChild(deleteLink);
+
+                postElement.appendChild(postTitle);
+                postElement.appendChild(postContent);
+                postElement.appendChild(actions);
+
+                // Comment Section
+                const commentsDiv = document.createElement('div');
+                commentsDiv.classList.add('comments');
+
+                const commentForm = document.createElement('form');
+                commentForm.classList.add('comment-form');
+
+                const commentTextArea = document.createElement('textarea');
+                commentTextArea.placeholder = 'Write your comment...';
+                commentTextArea.required = true;
+
+                const commentSubmitButton = document.createElement('button');
+                commentSubmitButton.type = 'submit';
+                commentSubmitButton.textContent = 'Submit Comment';
+
+                commentForm.appendChild(commentTextArea);
+                commentForm.appendChild(commentSubmitButton);
+
+                const commentList = document.createElement('div');
+                commentList.classList.add('comment-list');
+
+                commentForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const commentContent = commentTextArea.value;
+
+                    if (commentContent) {
+                        const newComment = {
+                            id: post.comments.length + 1,
+                            content: commentContent
+                        };
+
+                        post.comments.push(newComment);
+                        displayComments(post.comments, commentList);
+                        commentForm.reset();
+                    }
+                });
+
+                commentsDiv.appendChild(commentForm);
+                commentsDiv.appendChild(commentList);
+                postElement.appendChild(commentsDiv);
+
+                // Rating Section
+                const ratingDiv = document.createElement('div');
+                ratingDiv.classList.add('rating');
+
+                for (let i = 1; i <= 5; i++) {
+                    const star = document.createElement('span');
+                    star.innerHTML = '&#9733;'; // Unicode star character
+                    star.dataset.ratingValue = i;
+
+                    star.addEventListener('click', function() {
+                        post.rating = i;
+                        updateRatingDisplay(post.rating, ratingDiv);
+                    });
+
+                    ratingDiv.appendChild(star);
+                }
+
+                postElement.appendChild(ratingDiv);
+                updateRatingDisplay(post.rating, ratingDiv);
+
+                blogPostsContainer.appendChild(postElement);
+            });
+
+            document.getElementById('total-posts-count').textContent = blogPosts.length;
+
+            // Update categories and tags lists
+            updateCategoriesList();
+            updateTagsList();
+        }
+
+        function updateRatingDisplay(rating, ratingDiv) {
+            const stars = ratingDiv.querySelectorAll('span');
+            stars.forEach((star, index) => {
+                star.classList.toggle('active', index < rating);
+            });
+        }
+
+        function displayComments(comments, commentList) {
+            commentList.innerHTML = '';
+            comments.forEach((comment) => {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('comment');
+                commentElement.textContent = comment.content;
+
+                commentList.appendChild(commentElement);
+            });
+        }
+
+        function updateCategoriesList() {
+            const categoryList = document.getElementById('category-list');
+            categoryList.innerHTML = '';
+
+            categories.forEach((category) => {
+                const categoryListItem = document.createElement('li');
+                const categoryLink = document.createElement('a');
+                categoryLink.href = '#';
+                categoryLink.textContent = category;
+                categoryLink.addEventListener('click', function() {
+                    filterPostsByCategory(category);
+                });
+
+                categoryListItem.appendChild(categoryLink);
+                categoryList.appendChild(categoryListItem);
+            });
+        }
+
+        function updateTagsList() {
+            const tagList = document.getElementById('tag-list');
+            tagList.innerHTML = '';
+
+            tags.forEach((tag) => {
+                const tagListItem = document.createElement('li');
+                const tagLink = document.createElement('a');
+                tagLink.href = '#';
+                tagLink.textContent = tag;
+                tagLink.addEventListener('click', function() {
+                    filterPostsByTag(tag);
+                });
+
+                tagListItem.appendChild(tagLink);
+                tagList.appendChild(tagListItem);
+            });
+        }
+
+        function filterPostsByCategory(category) {
+            const filteredPosts = blogPosts.filter((post) => post.categories.includes(category));
+            displayPosts(filteredPosts);
+        }
+
+        function filterPostsByTag(tag) {
+            const filteredPosts = blogPosts.filter((post) => post.tags.includes(tag));
+            displayPosts(filteredPosts);
+        }
+
+        function truncateText(text, maxLength) {
+            if (text.length > maxLength) {
+                return text.slice(0, maxLength) + '...';
+            }
+            return text;
+        }
+
+        function logout() {
+            sessionStorage.removeItem('authenticated');
+            window.location.href = 'login.html'; // Redirect to the login page
+        }
+
+        function checkAuthentication() {
+            if (!sessionStorage.getItem('authenticated')) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        document.getElementById('blogForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+
+            if (title && content) {
+                const newPost = {
+                    id: blogPosts.length + 1,
+                    title: title,
+                    content: content,
+                    comments: [], // Initialize an empty comments array
+                    rating: 0, // Initialize the rating to 0
+                    categories: [], // Add category handling if needed
+                    tags: [] // Add tag handling if needed
+                };
+
+                blogPosts.push(newPost);
+                displayPosts();
+
+                // Clear the form
+                document.getElementById('blogForm').reset();
+            }
+        });
+
+        checkAuthentication(); // Check authentication when the page loads
+    </script>
+</body>
+</html>
