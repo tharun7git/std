@@ -40,6 +40,36 @@
             background-color: #c82333;
         }
 
+        /* Updated button styles */
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .btn-edit {
+            background-color: #ffc107;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+
         /* Existing CSS for other elements */
         #blogForm {
             display: flex;
@@ -204,12 +234,13 @@
         const blogPosts = [];
         const categories = [];
         const tags = [];
+        let editingPostIndex = null;
 
-        function displayPosts() {
+        function displayPosts(posts = blogPosts) {
             const blogPostsContainer = document.getElementById('blogPosts');
             blogPostsContainer.innerHTML = '';
 
-            blogPosts.forEach((post, index) => {
+            posts.forEach((post, index) => {
                 const postElement = document.createElement('div');
                 postElement.classList.add('post');
 
@@ -237,16 +268,14 @@
                 const actions = document.createElement('div');
                 actions.classList.add('actions');
 
-                const editLink = document.createElement('a');
-                editLink.href = '#';
+                const editLink = document.createElement('button');
                 editLink.textContent = 'Edit';
                 editLink.classList.add('btn', 'btn-edit');
                 editLink.addEventListener('click', function() {
                     editPost(index);
                 });
 
-                const deleteLink = document.createElement('a');
-                deleteLink.href = '#';
+                const deleteLink = document.createElement('button');
                 deleteLink.textContent = 'Delete';
                 deleteLink.classList.add('btn', 'btn-delete');
                 deleteLink.addEventListener('click', function() {
@@ -300,6 +329,9 @@
                 commentsDiv.appendChild(commentForm);
                 commentsDiv.appendChild(commentList);
                 postElement.appendChild(commentsDiv);
+
+                // Display comments
+                displayComments(post.comments, commentList);
 
                 // Rating Section
                 const ratingDiv = document.createElement('div');
@@ -413,13 +445,38 @@
             }
         }
 
-        document.getElementById('blogForm').addEventListener('submit', function(event) {
+        function editPost(index) {
+            const post = blogPosts[index];
+            document.getElementById('title').value = post.title;
+            document.getElementById('content').value = post.content;
+
+            editingPostIndex = index;
+
+            // Change the button text to "Update"
+            document.querySelector('#blogForm button[type="submit"]').textContent = 'Update';
+        }
+
+        function deletePost(index) {
+            blogPosts.splice(index, 1);
+            displayPosts();
+        }
+
+        function submitNewPost(event) {
             event.preventDefault();
 
             const title = document.getElementById('title').value;
             const content = document.getElementById('content').value;
 
-            if (title && content) {
+            if (editingPostIndex !== null) {
+                // Update the existing post
+                blogPosts[editingPostIndex].title = title;
+                blogPosts[editingPostIndex].content = content;
+                editingPostIndex = null;
+
+                // Change the button text back to "Publish"
+                document.querySelector('#blogForm button[type="submit"]').textContent = 'Publish';
+            } else {
+                // Create a new post
                 const newPost = {
                     id: blogPosts.length + 1,
                     title: title,
@@ -431,12 +488,15 @@
                 };
 
                 blogPosts.push(newPost);
-                displayPosts();
-
-                // Clear the form
-                document.getElementById('blogForm').reset();
             }
-        });
+
+            displayPosts();
+
+            // Clear the form
+            document.getElementById('blogForm').reset();
+        }
+
+        document.getElementById('blogForm').addEventListener('submit', submitNewPost);
 
         checkAuthentication(); // Check authentication when the page loads
     </script>
